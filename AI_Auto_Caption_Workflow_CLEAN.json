@@ -1,0 +1,311 @@
+{
+  "name": "AI Auto Caption + Hashtag - Facebook Post",
+  "nodes": [
+    {
+      "parameters": {
+        "rule": {
+          "interval": [{"field": "minutes", "minutesInterval": 5}]
+        }
+      },
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.2,
+      "position": [5120, 1936],
+      "id": "33dcb21d-7103-405e-9fd1-fbc28f91fd93",
+      "name": "Chạy mỗi 5 phút"
+    },
+    {
+      "parameters": {
+        "documentId": {"__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "list", "cachedResultName": "Your Sheet Name"},
+        "sheetName": {"__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1"},
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [5344, 1936],
+      "id": "147c7e51-1592-48fd-9f68-8a8e76dcc7f8",
+      "name": "Đọc Google Sheets",
+      "credentials": {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}}
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {"caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 1},
+          "conditions": [
+            {"id": "filter-001", "leftValue": "={{ $json['Trạng_Thái'] }}", "rightValue": "Chưa đăng", "operator": {"type": "string", "operation": "equals"}},
+            {"id": "96d5bdac-0564-4aa4-97c3-aef1bf2af424", "leftValue": "={{ DateTime.fromFormat($json[\"Ngày_Đăng\"] + ' ' + $json[\"Giờ_Đăng\"], 'dd/MM/yyyy HH:mm:ss', { zone: 'Asia/Ho_Chi_Minh' }).toMillis() }}", "rightValue": "={{ DateTime.now().setZone('Asia/Ho_Chi_Minh').toMillis() }}", "operator": {"type": "number", "operation": "lte"}}
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.filter",
+      "typeVersion": 2,
+      "position": [5568, 1936],
+      "id": "8f8e4120-d494-4cf8-82a8-94ac389e5be5",
+      "name": "Lọc bài cần đăng"
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {"__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "list", "cachedResultName": "Your Sheet Name"},
+        "sheetName": {"__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1"},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {"Trạng_Thái": "Đang đăng", "row_number": "={{ $json.row_number }}"},
+          "matchingColumns": ["row_number"],
+          "schema": [
+            {"id": "Link_Hình", "displayName": "Link_Hình", "type": "string", "canBeUsedToMatch": true, "removed": true},
+            {"id": "Page_ID", "displayName": "Page_ID", "type": "string", "canBeUsedToMatch": true, "removed": true},
+            {"id": "Ngày_Đăng", "displayName": "Ngày_Đăng", "type": "string", "canBeUsedToMatch": true, "removed": true},
+            {"id": "Giờ_Đăng", "displayName": "Giờ_Đăng", "type": "string", "canBeUsedToMatch": true, "removed": true},
+            {"id": "Trạng_Thái", "displayName": "Trạng_Thái", "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "Link_Bài_Viết", "displayName": "Link_Bài_Viết", "type": "string", "canBeUsedToMatch": true, "removed": true},
+            {"id": "row_number", "displayName": "row_number", "type": "number", "canBeUsedToMatch": true, "readOnly": true, "removed": false}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [5792, 1936],
+      "id": "f3489076-af36-47f9-b8aa-35365802f691",
+      "name": "Cập nhật: Đang đăng",
+      "credentials": {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}}
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "assign-001", "name": "Image_URL", "value": "={{ $('Lọc bài cần đăng').item.json['Link_Hình'].includes('drive.google.com') ? 'https://drive.google.com/uc?export=view&id=' + $('Lọc bài cần đăng').item.json['Link_Hình'].match(/\\/d\\/([a-zA-Z0-9_-]+)/)?.[1] : $('Lọc bài cần đăng').item.json['Link_Hình'] }}", "type": "string"},
+            {"id": "assign-002", "name": "Page_ID", "value": "={{ $('Lọc bài cần đăng').item.json['Page_ID'] }}", "type": "number"},
+            {"id": "assign-003", "name": "Row_Number", "value": "={{ $json['row_number'] }}", "type": "number"}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [6000, 1936],
+      "id": "acd8a4ba-56b2-4133-8f2c-e4665333f301",
+      "name": "Đọc dữ liệu"
+    },
+    {
+      "parameters": {
+        "url": "https://serpapi.com/search.json",
+        "sendQuery": true,
+        "queryParameters": {
+          "parameters": [
+            {"name": "engine", "value": "google_lens"},
+            {"name": "url", "value": "={{ $json.Image_URL }}"},
+            {"name": "api_key", "value": "YOUR_SERPAPI_KEY"}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [6224, 1936],
+      "id": "6c5e1c21-f9a2-4a0e-b5e6-dcc138f189c5",
+      "name": "Google Lens - Nhận diện"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "extract-001", "name": "Nhan_Dien", "value": "={{ \n  (() => {\n    const data = Array.isArray($json) ? $json[0] : $json;\n    if (data?.related_content?.[0]?.query) return data.related_content[0].query;\n    if (data?.knowledge_graph?.[0]?.title) return data.knowledge_graph[0].title + (data.knowledge_graph[0].subtitle ? ' - ' + data.knowledge_graph[0].subtitle : '');\n    if (data?.visual_matches?.[0]?.title) {\n      const title = data.visual_matches[0].title;\n      const name = title.split(/\\s[-|]\\s/)[0];\n      return name.length < 50 ? name : title.substring(0, 50);\n    }\n    return 'Không nhận diện được';\n  })()\n}}", "type": "string"},
+            {"id": "extract-002", "name": "Image_URL", "value": "={{ $('Đọc dữ liệu').item.json.Image_URL }}", "type": "string"},
+            {"id": "extract-003", "name": "Page_ID", "value": "={{ $('Đọc dữ liệu').item.json.Page_ID }}", "type": "number"},
+            {"id": "extract-004", "name": "Row_Number", "value": "={{ $('Đọc dữ liệu').item.json.Row_Number }}", "type": "number"}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [6448, 1936],
+      "id": "1f60b820-423a-45cf-9820-97e8b5dad990",
+      "name": "Trích xuất nhận diện"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bạn là chuyên gia phân tích hình ảnh.\n\n**Kết quả nhận diện từ Google Lens:** {{ $json.Nhan_Dien }}\n\nHãy kết hợp thông tin trên với những gì bạn thấy trong hình để mô tả chi tiết:\n1. Đây là ai/cái gì\n2. Trang phục, ngoại hình, đặc điểm nổi bật\n3. Bối cảnh, môi trường\n4. Cảm xúc hoặc thông điệp\n\nTrả lời bằng tiếng Việt, ngắn gọn trong 3-4 câu.",
+        "options": {"systemMessage": "Bạn là AI phân tích hình ảnh. Ưu tiên sử dụng thông tin từ Google Lens nếu có, kết hợp với quan sát trực tiếp để mô tả chính xác nhất."}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [6672, 1936],
+      "id": "88324176-6f29-4673-9069-8369483e38d3",
+      "name": "GPT-4 Vision - Mô tả hình"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "=Bạn là Content Creator chuyên viết caption Facebook thu hút.\n\nDựa vào mô tả hình ảnh sau:\n{{ $json.output }}\n\nViết cho tôi:\n\n**CAPTION:**\n- Giọng văn: Trẻ trung, cảm xúc, gần gũi\n- Độ dài: 3-5 câu\n- Dùng emoji ở đầu dòng (🌟, 💫, ✨, 🎶, 💕...)\n- KHÔNG dùng ký tự * hoặc **\n- Kết thúc bằng câu hỏi tương tác hoặc lời kêu gọi\n\n**HASHTAG:**\n- Tạo 5-7 hashtag liên quan đến nội dung hình\n- Viết liền không dấu, ví dụ: #phinhung #casi #amnhacviet\n- Hashtag phổ biến, dễ tìm kiếm\n\nTrả về đúng định dạng JSON.",
+        "hasOutputParser": true,
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 1.7,
+      "position": [6880, 1936],
+      "id": "2a007982-32f6-4a8c-92f3-d6139c825c8c",
+      "name": "AI - Viết Caption + Hashtag"
+    },
+    {
+      "parameters": {"jsonSchemaExample": "{\n\t\"caption\": \"Nội dung caption hoàn chỉnh\",\n\t\"hashtags\": \"#hashtag1 #hashtag2 #hashtag3\"\n}"},
+      "type": "@n8n/n8n-nodes-langchain.outputParserStructured",
+      "typeVersion": 1.2,
+      "position": [6992, 2160],
+      "id": "87766654-b1ea-4543-a5d8-e0be777e3c15",
+      "name": "Output Parser"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {"id": "final-001", "name": "Final_Caption", "value": "={{ $json.output.caption }}\n\n{{ $json.output.hashtags }}", "type": "string"},
+            {"id": "final-002", "name": "Image_URL", "value": "={{ $('Trích xuất nhận diện').item.json.Image_URL }}", "type": "string"},
+            {"id": "final-003", "name": "Page_ID", "value": "={{ $('Trích xuất nhận diện').item.json.Page_ID }}", "type": "number"},
+            {"id": "final-004", "name": "Row_Number", "value": "={{ $('Trích xuất nhận diện').item.json.Row_Number }}", "type": "number"}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [7104, 1936],
+      "id": "9d25a7df-95e1-4aff-9387-fe907032ac5d",
+      "name": "Ghép Caption + Hashtag"
+    },
+    {
+      "parameters": {
+        "httpRequestMethod": "POST",
+        "graphApiVersion": "v22.0",
+        "node": "={{ $json.Page_ID }}",
+        "edge": "photos",
+        "options": {
+          "queryParameters": {
+            "parameter": [
+              {"name": "url", "value": "={{ $json.Image_URL }}"},
+              {"name": "message", "value": "={{ $json.Final_Caption }}"}
+            ]
+          }
+        }
+      },
+      "type": "n8n-nodes-base.facebookGraphApi",
+      "typeVersion": 1,
+      "position": [7328, 1936],
+      "id": "deaf75d8-45d9-4964-a9a3-cd070d153845",
+      "name": "Đăng Facebook",
+      "credentials": {"facebookGraphApi": {"id": "", "name": "Facebook Graph API"}}
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {"__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "list", "cachedResultName": "Your Sheet Name"},
+        "sheetName": {"__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1"},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {"row_number": "={{ $('Đọc dữ liệu').item.json.Row_Number }}", "Trạng_Thái": "Thành công", "Link_Bài_Viết": "={{ 'https://facebook.com/' + $json.id }}"},
+          "matchingColumns": ["row_number"],
+          "schema": [
+            {"id": "Trạng_Thái", "displayName": "Trạng_Thái", "type": "string", "canBeUsedToMatch": true},
+            {"id": "Link_Bài_Viết", "displayName": "Link_Bài_Viết", "type": "string", "canBeUsedToMatch": true, "removed": false},
+            {"id": "row_number", "displayName": "row_number", "type": "number", "canBeUsedToMatch": true, "readOnly": true, "removed": false}
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [7552, 1936],
+      "id": "4a162822-2811-4c0a-9b5d-19ce2e22ad96",
+      "name": "Cập nhật: Thành công",
+      "credentials": {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}}
+    },
+    {
+      "parameters": {
+        "operation": "update",
+        "documentId": {"__rl": true, "value": "YOUR_GOOGLE_SHEET_ID", "mode": "list", "cachedResultName": "Your Sheet Name"},
+        "sheetName": {"__rl": true, "value": "gid=0", "mode": "list", "cachedResultName": "Sheet1"},
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {"row_number": "={{ $('Đọc dữ liệu').item.json.Row_Number }}", "Trạng_Thái": "Thất bại"},
+          "matchingColumns": ["row_number"]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.5,
+      "position": [7552, 2240],
+      "id": "ab9b31f7-46b7-44d8-b317-15fbe16f4454",
+      "name": "Cập nhật: Thất bại",
+      "credentials": {"googleSheetsOAuth2Api": {"id": "", "name": "Google Sheets account"}},
+      "onError": "continueRegularOutput"
+    },
+    {
+      "parameters": {
+        "chatId": "YOUR_TELEGRAM_CHAT_ID",
+        "text": "=✅ ĐÃ ĐĂNG FACEBOOK THÀNH CÔNG!\n📷 Link: {{ $json['Link_Bài_Viết'] }}\n⏰ Lúc: {{ $now.setZone('Asia/Ho_Chi_Minh').toFormat('HH:mm dd/MM/yyyy') }}",
+        "additionalFields": {}
+      },
+      "type": "n8n-nodes-base.telegram",
+      "typeVersion": 1.2,
+      "position": [7856, 1952],
+      "id": "9244f8a8-3539-4a62-886b-6c258e32421b",
+      "name": "Send a text message",
+      "credentials": {"telegramApi": {"id": "", "name": "Telegram Bot"}}
+    },
+    {
+      "parameters": {"options": {}},
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [6576, 2144],
+      "id": "1ac3e05f-3320-4ebd-a036-077476024d28",
+      "name": "Google Gemini Chat Model",
+      "credentials": {"googlePalmApi": {"id": "", "name": "Google Gemini API"}}
+    },
+    {
+      "parameters": {"options": {}},
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [6800, 2176],
+      "id": "8b1caf85-ce2e-4c47-91b9-9240938da5b7",
+      "name": "Google Gemini Chat Model1",
+      "credentials": {"googlePalmApi": {"id": "", "name": "Google Gemini API"}}
+    },
+    {
+      "parameters": {
+        "content": "## 🚀 AI Auto Caption + Hashtag - Facebook Post\n\n### ✨ Tính năng:\n- 🔍 Google Lens nhận diện tự động\n- ✍️ AI viết caption (Gemini)\n- #️⃣ AI tự tạo hashtag\n- ⏰ Tự động theo lịch\n- 📱 Thông báo Telegram\n\n---\n\n### 📋 Google Sheets - 6 CỘT:\n\n| Cột | Tên | Mô tả |\n|-----|-----|-------|\n| A | Link_Hình | URL hình ảnh hoặc Google Drive link |\n| B | Page_ID | ID Facebook Page |\n| C | Ngày_Đăng | Format: dd/MM/yyyy |\n| D | Giờ_Đăng | Format: HH:mm:ss |\n| E | Trạng_Thái | Chưa đăng/Đang đăng/Thành công/Thất bại |\n| F | Link_Bài_Viết | Auto-fill sau khi đăng |\n\n---\n\n### ⚙️ CẦN CẤU HÌNH TRƯỚC KHI DÙNG:\n\n1. **YOUR_GOOGLE_SHEET_ID** - Thay bằng ID Google Sheet của bạn\n2. **YOUR_SERPAPI_KEY** - Đăng ký tại serpapi.com\n3. **YOUR_TELEGRAM_CHAT_ID** - Lấy từ @userinfobot\n4. **Google Sheets OAuth2** - Tất cả nodes Google Sheets\n5. **Google Gemini API** - 2 nodes AI\n6. **Facebook Graph API** - Node Đăng Facebook (cần Page Token từ /me/accounts)\n7. **Telegram Bot** - Node thông báo\n\n---\n\n### 💰 Chi phí ước tính: ~400-1000 VNĐ/bài\n\n### 📝 Lưu ý quan trọng:\n- Facebook Token cần lấy từ /me/accounts (Page Token)\n- KHÔNG dùng User Token, phải dùng Page Token\n- Timezone đã set sẵn Asia/Ho_Chi_Minh",
+        "height": 780,
+        "width": 460
+      },
+      "id": "7ea58eea-ed10-4c75-be5c-2101fb05bfae",
+      "name": "Hướng dẫn",
+      "type": "n8n-nodes-base.stickyNote",
+      "position": [5120, 1150],
+      "typeVersion": 1
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "Chạy mỗi 5 phút": {"main": [[{"node": "Đọc Google Sheets", "type": "main", "index": 0}]]},
+    "Đọc Google Sheets": {"main": [[{"node": "Lọc bài cần đăng", "type": "main", "index": 0}]]},
+    "Lọc bài cần đăng": {"main": [[{"node": "Cập nhật: Đang đăng", "type": "main", "index": 0}]]},
+    "Cập nhật: Đang đăng": {"main": [[{"node": "Đọc dữ liệu", "type": "main", "index": 0}]]},
+    "Đọc dữ liệu": {"main": [[{"node": "Google Lens - Nhận diện", "type": "main", "index": 0}]]},
+    "Google Lens - Nhận diện": {"main": [[{"node": "Trích xuất nhận diện", "type": "main", "index": 0}]]},
+    "Trích xuất nhận diện": {"main": [[{"node": "GPT-4 Vision - Mô tả hình", "type": "main", "index": 0}]]},
+    "GPT-4 Vision - Mô tả hình": {"main": [[{"node": "AI - Viết Caption + Hashtag", "type": "main", "index": 0}]]},
+    "Output Parser": {"ai_outputParser": [[{"node": "AI - Viết Caption + Hashtag", "type": "ai_outputParser", "index": 0}]]},
+    "AI - Viết Caption + Hashtag": {"main": [[{"node": "Ghép Caption + Hashtag", "type": "main", "index": 0}]]},
+    "Ghép Caption + Hashtag": {"main": [[{"node": "Đăng Facebook", "type": "main", "index": 0}]]},
+    "Đăng Facebook": {"main": [[{"node": "Cập nhật: Thành công", "type": "main", "index": 0}]]},
+    "Google Gemini Chat Model": {"ai_languageModel": [[{"node": "GPT-4 Vision - Mô tả hình", "type": "ai_languageModel", "index": 0}]]},
+    "Google Gemini Chat Model1": {"ai_languageModel": [[{"node": "AI - Viết Caption + Hashtag", "type": "ai_languageModel", "index": 0}]]},
+    "Cập nhật: Thành công": {"main": [[{"node": "Send a text message", "type": "main", "index": 0}]]}
+  },
+  "active": false,
+  "settings": {"executionOrder": "v1"},
+  "tags": []
+}
