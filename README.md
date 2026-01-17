@@ -21,7 +21,7 @@ This project is an automated workflow built with **n8n** that streamlines social
 4.  **Publishing:** The workflow pushes the image and text to the Facebook Page.
 5.  **Notification:**
     - **Success:** Updates Sheet to "Thành công" & sends link to Telegram.
-    - **Failure:** Updates Sheet to "Thất bại" & sends error log to Telegram.
+    - **Failure:** Updates Sheet to "Thất bại" & sends error log to Telegram. 
 
 ## 📸 Workflow Preview
 <img width="1657" height="243" alt="image" src="https://github.com/user-attachments/assets/dee09f69-38dd-4616-90fb-4248c51ecaf6" />
