@@ -24,7 +24,8 @@ This project is an automated workflow built with **n8n** that streamlines social
     - **Failure:** Updates Sheet to "Thất bại" & sends error log to Telegram.
 
 ## 📸 Workflow Preview
-*(Bạn hãy chụp ảnh màn hình toàn bộ cái Flow n8n của bạn và dán vào đây)*
+<img width="1657" height="243" alt="image" src="https://github.com/user-attachments/assets/dee09f69-38dd-4616-90fb-4248c51ecaf6" />
+
 
 ## 🚀 How to Use
 1.  Import `AI_Auto_Caption_Workflow_CLEAN.json` into your n8n instance.
