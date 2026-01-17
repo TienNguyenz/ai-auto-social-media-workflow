@@ -38,4 +38,4 @@ This project is an automated workflow built with **n8n** that streamlines social
 3.  Setup your Google Sheet with columns: `Link_Hình`, `Page_ID`, `Ngày_Đăng`, `Giờ_Đăng`, `Trạng_Thái`.
 
 ---
-*Created by [Your Name]*
+*Created by Nguyễn Hoàng Tiến*
